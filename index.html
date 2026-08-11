@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="theme-color" content="#c0392b"/>
+<title>ReadySpeak French — Social Edition</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(160deg, #c0392b 0%, #8e1212 100%); min-height: 100vh; padding-bottom: 80px; }
+  h1 { text-align:center; color:white; font-size:1.4rem; font-weight:900; padding: 18px 16px 4px; text-shadow: 1px 1px 6px rgba(0,0,0,0.3); }
+  .subtitle { text-align:center; color:rgba(255,255,255,0.85); font-size:0.82rem; margin-bottom:16px; }
+  .brand { text-align:center; color:rgba(255,255,255,0.6); font-size:0.7rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; padding-top:6px; }
+  .save-hint { background:rgba(0,0,0,0.2); color:rgba(255,255,255,0.9); font-size:0.78rem; padding:10px 16px; text-align:center; line-height:1.5; }
+  .save-hint b { color: white; }
+  .dir-toggle { display:flex; gap:8px; padding:12px 16px 4px; max-width:460px; margin:0 auto; }
+  .dir-btn { flex:1; padding:10px; border:2px solid rgba(255,255,255,0.4); border-radius:12px; background:transparent; color:white; font-weight:700; font-size:0.85rem; cursor:pointer; transition:all 0.2s; }
+  .dir-btn.active { background:white; color:#c0392b; border-color:white; }
+  .search-bar { display:flex; align-items:center; background:rgba(255,255,255,0.95); border-radius:14px; margin:12px 16px; padding:10px 14px; gap:8px; max-width:460px; margin-left:auto; margin-right:auto; }
+  .search-icon { font-size:1rem; }
+  .search-bar input { border:none; outline:none; font-size:0.95rem; width:100%; background:transparent; color:#2c3e50; }
+  .cat-row { display:flex; gap:8px; overflow-x:auto; padding:0 16px 12px; max-width:460px; margin:0 auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  .cat-row::-webkit-scrollbar { display:none; }
+  .cat-pill { flex-shrink:0; padding:8px 14px; border-radius:20px; border:none; cursor:pointer; font-weight:700; font-size:0.82rem; white-space:nowrap; background:rgba(255,255,255,0.25); color:white; transition:all 0.2s; }
+  .cat-pill.active { background:white; color:#c0392b; }
+  .phrase-list { padding:0 16px; max-width:460px; margin:0 auto; }
+  .phrase-card { background:white; border-radius:14px; padding:14px 16px; margin-bottom:10px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.08); transition:transform 0.15s; position:relative; }
+  .phrase-card:active { transform:scale(0.98); }
+  .phrase-card.speaking { box-shadow:0 0 0 3px #c0392b, 0 3px 12px rgba(0,0,0,0.12); }
+  .phrase-en { font-size:0.95rem; color:#2c3e50; font-weight:600; margin-bottom:6px; line-height:1.4; }
+  .phrase-es { font-size:1.1rem; color:#c0392b; font-weight:700; line-height:1.4; display:flex; align-items:center; gap:8px; }
+  .phrase-es .speak-icon { font-size:1.2rem; flex-shrink:0; }
+  .phrase-tag { font-size:0.65rem; color:#999; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+  .no-results { text-align:center; color:rgba(255,255,255,0.7); padding:40px 16px; font-size:0.95rem; }
+  .now-speaking { position:fixed; bottom:0; left:0; right:0; background:#c0392b; color:white; padding:14px 20px; text-align:center; font-weight:700; font-size:0.9rem; transform:translateY(100%); transition:transform 0.3s; z-index:100; }
+  .now-speaking.show { transform:translateY(0); }
+  .wave { margin-right:8px; }
+  .add-phrase-btn { display:block; width:calc(100% - 32px); margin:12px auto; padding:14px; background:linear-gradient(135deg, #c0392b, #e67e22); color:white; border:none; border-radius:14px; font-size:1rem; font-weight:700; cursor:pointer; letter-spacing:0.5px; max-width:460px; }
+  .add-phrase-btn:active { opacity:0.85; }
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:999; align-items:flex-end; justify-content:center; }
+  .modal-overlay.show { display:flex; }
+  .modal-box { background:white; border-radius:24px 24px 0 0; padding:24px 20px 40px; width:100%; max-width:500px; animation:slideUp 0.25s ease; }
+  @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+  .modal-title { font-size:1.15rem; font-weight:800; color:#2c3e50; margin-bottom:16px; text-align:center; }
+  .modal-label { font-size:0.8rem; font-weight:700; color:#666; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px; margin-top:12px; }
+  .modal-input, .modal-select { width:100%; padding:12px 14px; border:2px solid #e0e0e0; border-radius:12px; font-size:1rem; color:#2c3e50; box-sizing:border-box; outline:none; font-family:inherit; }
+  .modal-input:focus, .modal-select:focus { border-color:#c0392b; }
+  .modal-btn-row { display:flex; gap:10px; margin-top:18px; }
+  .modal-cancel { flex:1; padding:13px; border:2px solid #ddd; background:white; border-radius:12px; font-size:0.95rem; font-weight:700; color:#666; cursor:pointer; }
+  .modal-save { flex:2; padding:13px; background:linear-gradient(135deg, #c0392b, #e67e22); border:none; border-radius:12px; font-size:0.95rem; font-weight:700; color:white; cursor:pointer; }
+  .modal-save:active, .modal-cancel:active { opacity:0.8; }
+  .modal-error { color:#e74c3c; font-size:0.82rem; margin-top:8px; text-align:center; min-height:18px; }
+  .delete-phrase { position:absolute; top:8px; right:8px; background:none; border:none; color:#ccc; font-size:1rem; cursor:pointer; padding:4px 6px; border-radius:8px; line-height:1; }
+  .delete-phrase:active { color:#e74c3c; }
+  .custom-badge { display:inline-block; background:#f0f4ff; color:#c0392b; font-size:0.6rem; font-weight:700; padding:1px 6px; border-radius:6px; margin-left:6px; letter-spacing:0.5px; vertical-align:middle; }
+  .licensed { text-align:center; color:rgba(255,255,255,0.45); font-size:0.65rem; padding:4px 16px 0; }
+</style>
+
+<style id="lock-styles">
+#lockOverlay{position:fixed;inset:0;z-index:99999;background:rgba(5,5,10,0.97);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;font-family:'Segoe UI',Arial,sans-serif}
+#lockOverlay .lock-icon{font-size:48px;margin-bottom:16px}
+#lockOverlay h2{color:#fff;font-size:22px;margin-bottom:8px;letter-spacing:1px}
+#lockOverlay p{color:#888;font-size:14px;line-height:1.6;max-width:320px;margin-bottom:20px}
+#lockOverlay .lock-input{padding:12px 16px;border-radius:10px;border:2px solid #333;background:#111;color:#fff;font-size:16px;width:260px;text-align:center;outline:none;margin-bottom:12px}
+#lockOverlay .lock-input:focus{border-color:#c0392b}
+#lockOverlay .lock-btn{padding:12px 32px;border-radius:10px;border:none;background:#c0392b;color:#fff;font-size:15px;font-weight:bold;cursor:pointer;letter-spacing:1px;transition:all 0.2s}
+#lockOverlay .lock-btn:hover{background:#e74c3c;box-shadow:0 0 15px rgba(192,57,43,0.4)}
+#lockOverlay .lock-error{color:#e04040;font-size:13px;margin-top:8px;display:none}
+#lockOverlay .lock-demo{margin-top:18px;color:#555;font-size:13px}
+#lockOverlay .lock-demo a{color:#00aaff;text-decoration:none}
+#lockOverlay .lock-buy{margin-top:14px;display:inline-block;padding:8px 20px;border-radius:8px;background:rgba(192,57,43,0.2);border:1px solid rgba(192,57,43,0.5);color:#c0392b;text-decoration:none;font-size:13px;font-weight:bold}
+#lockOverlay .lock-buy:hover{background:rgba(192,57,43,0.35);color:#fff}
+</style>
+</head>
+<body>
+<div id="lockOverlay" style="display:none;">
+  <div class="lock-icon">🔒</div>
+  <h2>Unlock Full Phrasebook</h2>
+  <p>Enter your license key to unlock all social and travel phrases. Don't have a key? Get instant access for $4.99.</p>
+  <input type="text" class="lock-input" id="lockInput" placeholder="Enter license key" onkeypress="if(event.key==='Enter')tryUnlock()"/>
+  <button class="lock-btn" onclick="tryUnlock()">Unlock Now</button>
+  <div class="lock-error" id="lockError">Invalid code. Please try again.</div>
+  <a href="https://wordsandwheels.net" class="lock-buy">Buy Access — $4.99</a>
+  <div class="lock-demo">Want to try first? <a href="#" onclick="enterDemo();return false;">Browse demo (10 phrases)</a></div>
+</div>
+
+<div id="app">
+  <h1>ReadySpeak French</h1>
+  <div class="brand">Social Edition</div>
+  <div class="subtitle">Travel, Conversation &amp; Dining</div>
+
+  <div class="save-hint">
+    <b>Tap any phrase</b> to hear it spoken aloud. Your custom phrases are saved on this device.
+  </div>
+
+  <div class="dir-toggle">
+    <button class="dir-btn active" onclick="setDirection('en-tl')">English &rarr; French</button>
+    <button class="dir-btn" onclick="setDirection('tl-en')">French &rarr; English</button>
+  </div>
+
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="Search phrases..." oninput="renderPhrases()"/>
+  </div>
+
+  <div class="cat-row" id="catRow"></div>
+  <div class="phrase-list" id="phraseList"></div>
+  <button class="add-phrase-btn" onclick="openModal()">+ Add Your Own Phrase</button>
+</div>
+
+<div class="now-speaking" id="nowSpeaking">
+  <span class="wave">🔊</span><span id="speakingText"></span>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-title">Add Your Own Phrase</div>
+    <div class="modal-label">English</div>
+    <input type="text" class="modal-input" id="customEn" placeholder="Enter English phrase"/>
+    <div class="modal-label">French</div>
+    <input type="text" class="modal-input" id="customTl" placeholder="Enter French phrase"/>
+    <div class="modal-label">Category</div>
+    <select class="modal-select" id="customCat">
+      <option value="Greetings">Greetings</option>
+      <option value="Conversation">Conversation</option>
+      <option value="Dining">Dining</option>
+      <option value="Travel">Travel</option>
+      <option value="Shopping">Shopping</option>
+      <option value="Directions">Directions</option>
+      <option value="Emergency">Emergency</option>
+    </select>
+    <div class="modal-error" id="modalError"></div>
+    <div class="modal-btn-row">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-save" onclick="saveCustomPhrase()">Save Phrase</button>
+    </div>
+  </div>
+</div>
+
+<div class="licensed">ReadySpeak&trade; &mdash; Social Edition</div>
+
+<script>
+// ===== PHRASES =====
+const PHRASES = [
+  {
+    "cat": "Dining",
+    "en": "A table for two, please",
+    "tl": "Une table pour deux, s'il vous plaît"
+  },
+  {
+    "cat": "Dining",
+    "en": "The menu, please",
+    "tl": "La carte, s'il vous plaît"
+  },
+  {
+    "cat": "Dining",
+    "en": "What do you recommend?",
+    "tl": "Que recommandez-vous ?"
+  },
+  {
+    "cat": "Dining",
+    "en": "I would like to order",
+    "tl": "Je voudrais commander"
+  },
+  {
+    "cat": "Dining",
+    "en": "Water, please",
+    "tl": "De l'eau, s'il vous plaît"
+  },
+  {
+    "cat": "Dining",
+    "en": "A glass of red wine",
+    "tl": "Un verre de vin rouge"
+  },
+  {
+    "cat": "Dining",
+    "en": "A glass of white wine",
+    "tl": "Un verre de vin blanc"
+  },
+  {
+    "cat": "Dining",
+    "en": "A cup of coffee",
+    "tl": "Une tasse de café"
+  },
+  {
+    "cat": "Dining",
+    "en": "Coffee with milk",
+    "tl": "Un café au lait"
+  },
+  {
+    "cat": "Dining",
+    "en": "Bon appétit!",
+    "tl": "Bon appétit !"
+  },
+  {
+    "cat": "Dining",
+    "en": "Delicious!",
+    "tl": "Délicieux !"
+  },
+  {
+    "cat": "Dining",
+    "en": "The check, please",
+    "tl": "L'addition, s'il vous plaît"
+  },
+  {
+    "cat": "Dining",
+    "en": "Is service included?",
+    "tl": "Le service est-il compris ?"
+  },
+  {
+    "cat": "Dining",
+    "en": "Do you accept credit cards?",
+    "tl": "Acceptez-vous les cartes de crédit ?"
+  },
+  {
+    "cat": "Dining",
+    "en": "I am a vegetarian",
+    "tl": "Je suis végétarien"
+  },
+  {
+    "cat": "Dining",
+    "en": "I am allergic to nuts",
+    "tl": "Je suis allergique aux fruits à coque"
+  },
+  {
+    "cat": "Dining",
+    "en": "Without gluten, please",
+    "tl": "Sans gluten, s'il vous plaît"
+  },
+  {
+    "cat": "Dining",
+    "en": "Cheers!",
+    "tl": "Santé !"
+  },
+  {
+    "cat": "Dining",
+    "en": "More bread, please",
+    "tl": "Encore du pain, s'il vous plaît"
+  },
+  {
+    "cat": "Dining",
+    "en": "Where is the bathroom?",
+    "tl": "Où sont les toilettes ?"
+  },
+  {
+    "cat": "Dining",
+    "en": "That was wonderful",
+    "tl": "C'était magnifique"
+  },
+  {
+    "cat": "Dining",
+    "en": "Keep the change",
+    "tl": "Gardez la monnaie"
+  },
+  {
+    "cat": "Travel",
+    "en": "Where is the train station?",
+    "tl": "Où est la gare ?"
+  },
+  {
+    "cat": "Travel",
+    "en": "Where is the airport?",
+    "tl": "Où est l'aéroport ?"
+  },
+  {
+    "cat": "Travel",
+    "en": "I need a taxi",
+    "tl": "J'ai besoin d'un taxi"
+  },
+  {
+    "cat": "Travel",
+    "en": "One ticket to Paris, please",
+    "tl": "Un billet pour Paris, s'il vous plaît"
+  },
+  {
+    "cat": "Travel",
+    "en": "Round trip ticket",
+    "tl": "Un billet aller-retour"
+  },
+  {
+    "cat": "Travel",
+    "en": "What time does the train leave?",
+    "tl": "À quelle heure part le train ?"
+  },
+  {
+    "cat": "Travel",
+    "en": "Is this seat taken?",
+    "tl": "Ce siège est-il occupé ?"
+  },
+  {
+    "cat": "Travel",
+    "en": "Here is my passport",
+    "tl": "Voici mon passeport"
+  },
+  {
+    "cat": "Travel",
+    "en": "Where is my luggage?",
+    "tl": "Où sont mes bagages ?"
+  },
+  {
+    "cat": "Travel",
+    "en": "I lost my bag",
+    "tl": "J'ai perdu mon sac"
+  },
+  {
+    "cat": "Travel",
+    "en": "Hotel reservation",
+    "tl": "Une réservation d'hôtel"
+  },
+  {
+    "cat": "Travel",
+    "en": "I have a room booked",
+    "tl": "J'ai réservé une chambre"
+  },
+  {
+    "cat": "Travel",
+    "en": "What is the Wi-Fi password?",
+    "tl": "Quel est le mot de passe du Wi-Fi ?"
+  },
+  {
+    "cat": "Travel",
+    "en": "What time is check-out?",
+    "tl": "À quelle heure est le départ ?"
+  },
+  {
+    "cat": "Travel",
+    "en": "Can you take a photo of us?",
+    "tl": "Pouvez-vous nous prendre en photo ?"
+  },
+  {
+    "cat": "Travel",
+    "en": "How long does the trip take?",
+    "tl": "Combien de temps dure le trajet ?"
+  },
+  {
+    "cat": "Travel",
+    "en": "Is there a bus to the center?",
+    "tl": "Y a-t-il un bus pour le centre-ville ?"
+  },
+  {
+    "cat": "Travel",
+    "en": "Where can I exchange money?",
+    "tl": "Où puis-je changer de l'argent ?"
+  },
+  {
+    "cat": "Travel",
+    "en": "Have a nice flight!",
+    "tl": "Bon vol !"
+  },
+  {
+    "cat": "Travel",
+    "en": "Have a nice trip!",
+    "tl": "Bon voyage !"
+  },
+  {
+    "cat": "Conversation",
+    "en": "How are you?",
+    "tl": "Comment allez-vous ?"
+  },
+  {
+    "cat": "Conversation",
+    "en": "I'm doing well, thank you",
+    "tl": "Je vais bien, merci"
+  },
+  {
+    "cat": "Conversation",
+    "en": "What is your name?",
+    "tl": "Comment vous appelez-vous ?"
+  },
+  {
+    "cat": "Conversation",
+    "en": "My name is...",
+    "tl": "Je m'appelle..."
+  },
+  {
+    "cat": "Conversation",
+    "en": "Nice to meet you",
+    "tl": "Enchanté de vous rencontrer"
+  },
+  {
+    "cat": "Conversation",
+    "en": "Where are you from?",
+    "tl": "D'où venez-vous ?"
+  },
+  {
+    "cat": "Conversation",
+    "en": "I am from the United States",
+    "tl": "Je viens des États-Unis"
+  },
+  {
+    "cat": "Conversation",
+    "en": "Do you speak English?",
+    "tl": "Parlez-vous anglais ?"
+  },
+  {
+    "cat": "Conversation",
+    "en": "I speak a little French",
+    "tl": "Je parle un peu français"
+  },
+  {
+    "cat": "Conversation",
+    "en": "I don't understand",
+    "tl": "Je ne comprends pas"
+  },
+  {
+    "cat": "Conversation",
+    "en": "Could you repeat, please?",
+    "tl": "Pouvez-vous répéter, s'il vous plaît ?"
+  },
+  {
+    "cat": "Conversation",
+    "en": "Could you speak slower?",
+    "tl": "Pouvez-vous parler plus lentement ?"
+  },
+  {
+    "cat": "Conversation",
+    "en": "What does this mean?",
+    "tl": "Qu'est-ce que cela veut dire ?"
+  },
+  {
+    "cat": "Conversation",
+    "en": "How do you say this in French?",
+    "tl": "Comment dit-on cela en français ?"
+  },
+  {
+    "cat": "Conversation",
+    "en": "I am very happy",
+    "tl": "Je suis très heureux"
+  },
+  {
+    "cat": "Conversation",
+    "en": "I am tired",
+    "tl": "Je suis fatigué"
+  },
+  {
+    "cat": "Conversation",
+    "en": "What do you do for work?",
+    "tl": "Que faites-vous dans la vie ?"
+  },
+  {
+    "cat": "Conversation",
+    "en": "That's interesting",
+    "tl": "C'est intéressant"
+  },
+  {
+    "cat": "Conversation",
+    "en": "What a beautiful day!",
+    "tl": "Quelle belle journée !"
+  },
+  {
+    "cat": "Conversation",
+    "en": "See you later!",
+    "tl": "À plus tard !"
+  },
+  {
+    "cat": "Greetings",
+    "en": "Hello / Good morning",
+    "tl": "Bonjour"
+  },
+  {
+    "cat": "Greetings",
+    "en": "Good evening",
+    "tl": "Bonsoir"
+  },
+  {
+    "cat": "Greetings",
+    "en": "Welcome",
+    "tl": "Bienvenue"
+  },
+  {
+    "cat": "Greetings",
+    "en": "Goodbye",
+    "tl": "Au revoir"
+  },
+  {
+    "cat": "Greetings",
+    "en": "See you tomorrow",
+    "tl": "À demain"
+  },
+  {
+    "cat": "Greetings",
+    "en": "See you soon",
+    "tl": "À bientôt"
+  },
+  {
+    "cat": "Greetings",
+    "en": "Please",
+    "tl": "S'il vous plaît"
+  },
+  {
+    "cat": "Greetings",
+    "en": "Thank you very much",
+    "tl": "Merci beaucoup"
+  },
+  {
+    "cat": "Greetings",
+    "en": "You're welcome",
+    "tl": "De rien"
+  },
+  {
+    "cat": "Greetings",
+    "en": "Excuse me",
+    "tl": "Excusez-moi"
+  },
+  {
+    "cat": "Greetings",
+    "en": "I'm sorry",
+    "tl": "Je suis désolé"
+  },
+  {
+    "cat": "Greetings",
+    "en": "Yes",
+    "tl": "Oui"
+  },
+  {
+    "cat": "Greetings",
+    "en": "No",
+    "tl": "Non"
+  },
+  {
+    "cat": "Greetings",
+    "en": "Maybe",
+    "tl": "Peut-être"
+  },
+  {
+    "cat": "Greetings",
+    "en": "Okay / All right",
+    "tl": "D'accord"
+  },
+  {
+    "cat": "Greetings",
+    "en": "Have a good day!",
+    "tl": "Bonne journée !"
+  },
+  {
+    "cat": "Greetings",
+    "en": "Have a good evening!",
+    "tl": "Bonne soirée !"
+  },
+  {
+    "cat": "Greetings",
+    "en": "Of course",
+    "tl": "Bien sûr"
+  },
+  {
+    "cat": "Shopping",
+    "en": "How much is this?",
+    "tl": "Combien ça coûte ?"
+  },
+  {
+    "cat": "Shopping",
+    "en": "It's too expensive",
+    "tl": "C'est trop cher"
+  },
+  {
+    "cat": "Shopping",
+    "en": "Do you have a smaller size?",
+    "tl": "Avez-vous une taille plus petite ?"
+  },
+  {
+    "cat": "Shopping",
+    "en": "Do you have a larger size?",
+    "tl": "Avez-vous une taille plus grande ?"
+  },
+  {
+    "cat": "Shopping",
+    "en": "I'm just looking",
+    "tl": "Je regarde seulement"
+  },
+  {
+    "cat": "Shopping",
+    "en": "I will take this one",
+    "tl": "Je vais prendre celui-ci"
+  },
+  {
+    "cat": "Shopping",
+    "en": "Can I pay with credit card?",
+    "tl": "Puis-je payer par carte bancaire ?"
+  },
+  {
+    "cat": "Shopping",
+    "en": "Do you have cash change?",
+    "tl": "Avez-vous de la monnaie ?"
+  },
+  {
+    "cat": "Shopping",
+    "en": "Can I try this on?",
+    "tl": "Puis-je l'essayer ?"
+  },
+  {
+    "cat": "Shopping",
+    "en": "Where is the fitting room?",
+    "tl": "Où est la cabine d'essayage ?"
+  },
+  {
+    "cat": "Shopping",
+    "en": "Is there a discount?",
+    "tl": "Y a-t-il une réduction ?"
+  },
+  {
+    "cat": "Shopping",
+    "en": "I would like a bag, please",
+    "tl": "Je voudrais un sac, s'il vous plaît"
+  },
+  {
+    "cat": "Shopping",
+    "en": "Where is the supermarket?",
+    "tl": "Où est le supermarché ?"
+  },
+  {
+    "cat": "Shopping",
+    "en": "What time do you close?",
+    "tl": "À quelle heure fermez-vous ?"
+  },
+  {
+    "cat": "Directions",
+    "en": "Where is...?",
+    "tl": "Où se trouve... ?"
+  },
+  {
+    "cat": "Directions",
+    "en": "Straight ahead",
+    "tl": "Tout droit"
+  },
+  {
+    "cat": "Directions",
+    "en": "Turn left",
+    "tl": "Tournez à gauche"
+  },
+  {
+    "cat": "Directions",
+    "en": "Turn right",
+    "tl": "Tournez à droite"
+  },
+  {
+    "cat": "Directions",
+    "en": "Is it near?",
+    "tl": "Est-ce près d'ici ?"
+  },
+  {
+    "cat": "Directions",
+    "en": "Is it far from here?",
+    "tl": "Est-ce loin d'ici ?"
+  },
+  {
+    "cat": "Directions",
+    "en": "Next to",
+    "tl": "À côté de"
+  },
+  {
+    "cat": "Directions",
+    "en": "Across from",
+    "tl": "En face de"
+  },
+  {
+    "cat": "Directions",
+    "en": "How do I get to the center?",
+    "tl": "Comment aller au centre-ville ?"
+  },
+  {
+    "cat": "Directions",
+    "en": "Can you show me on the map?",
+    "tl": "Pouvez-vous me montrer sur la carte ?"
+  },
+  {
+    "cat": "Emergency",
+    "en": "Help!",
+    "tl": "Au secours !"
+  },
+  {
+    "cat": "Emergency",
+    "en": "Call the police!",
+    "tl": "Appelez la police !"
+  },
+  {
+    "cat": "Emergency",
+    "en": "I lost my passport",
+    "tl": "J'ai perdu mon passeport"
+  },
+  {
+    "cat": "Emergency",
+    "en": "I lost my wallet",
+    "tl": "J'ai perdu mon portefeuille"
+  },
+  {
+    "cat": "Emergency",
+    "en": "Someone stole my purse",
+    "tl": "On m'a volé mon sac"
+  },
+  {
+    "cat": "Emergency",
+    "en": "Where is the police station?",
+    "tl": "Où est le commissariat de police ?"
+  },
+  {
+    "cat": "Emergency",
+    "en": "Where is the embassy?",
+    "tl": "Où est l'ambassade ?"
+  },
+  {
+    "cat": "Emergency",
+    "en": "I am lost",
+    "tl": "Je suis perdu"
+  }
+];
+
+// ===== STATE =====
+let direction = 'en-tl';
+let activeCat = 'All';
+let searchQuery = '';
+const TL_LANG = 'fr-FR';
+
+function loadCustomPhrases() {
+  try { return JSON.parse(localStorage.getItem('customPhrases_french_social') || '[]'); }
+  catch { return []; }
+}
+function saveCustomPhrasesToStorage(arr) {
+  localStorage.setItem('customPhrases_french_social', JSON.stringify(arr));
+}
+let CUSTOM_PHRASES = loadCustomPhrases();
+
+function getAllPhrases() { return [...PHRASES, ...CUSTOM_PHRASES]; }
+function getCategories() {
+  const all = getAllPhrases();
+  const cats = ['All', ...Array.from(new Set(all.map(p => p.cat)))];
+  if (CUSTOM_PHRASES.length > 0 && !cats.includes('My Phrases')) cats.push('My Phrases');
+  return cats;
+}
+
+function init() {
+  renderCategories();
+  renderPhrases();
+  if (window.speechSynthesis) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  }
+  document.addEventListener('touchstart', function unlock() {
+    if (window.speechSynthesis) {
+      const u = new SpeechSynthesisUtterance('');
+      window.speechSynthesis.speak(u);
+    }
+    document.removeEventListener('touchstart', unlock);
+  }, { once: true });
+}
+
+function setDirection(dir) {
+  direction = dir;
+  document.querySelectorAll('.dir-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderPhrases();
+}
+
+function renderCategories() {
+  const row = document.getElementById('catRow');
+  const cats = getCategories();
+  row.innerHTML = cats.map(function(c) {
+    return '<button class="cat-pill ' + (c === activeCat ? 'active' : '') + '" onclick="setCategory(\'' + c + '\')">' + c + '</button>';
+  }).join('');
+}
+
+function setCategory(cat) {
+  activeCat = cat;
+  renderCategories();
+  renderPhrases();
+}
+
+function renderPhrases() {
+  searchQuery = document.getElementById('searchInput').value.toLowerCase();
+  const list = document.getElementById('phraseList');
+  let all = getAllPhrases();
+
+  if (activeCat !== 'All' && activeCat !== 'My Phrases') {
+    all = all.filter(function(p) { return p.cat === activeCat; });
+  }
+  if (activeCat === 'My Phrases') {
+    all = CUSTOM_PHRASES;
+  }
+  if (searchQuery) {
+    all = all.filter(function(p) {
+      return p.en.toLowerCase().includes(searchQuery) || p.tl.toLowerCase().includes(searchQuery);
+    });
+  }
+
+  if (all.length === 0) {
+    list.innerHTML = '<div class="no-results">No phrases found. Try a different search.</div>';
+    return;
+  }
+
+  list.innerHTML = all.map(function(p, i) {
+    var idx = PHRASES.indexOf(p);
+    var isCustom = idx === -1;
+    var enText = direction === 'en-tl' ? p.en : p.tl;
+    var tlText = direction === 'en-tl' ? p.tl : p.en;
+    var speakLang = direction === 'en-tl' ? TL_LANG : 'en-US';
+    var safeText = tlText.replace(/'/g, "\\'");
+    var customIdx = isCustom ? CUSTOM_PHRASES.indexOf(p) : -1;
+    return '<div class="phrase-card" onclick="speak(this, \'' + safeText + '\', \'' + speakLang + '\')">' +
+      '<div class="phrase-tag">' + p.cat + '</div>' +
+      '<div class="phrase-en">' + enText + '</div>' +
+      '<div class="phrase-es"><span class="speak-icon">🔊</span>' + tlText + (isCustom ? '<span class="custom-badge">MY PHRASE</span>' : '') + '</div>' +
+      (isCustom ? '<button class="delete-phrase" onclick="deleteCustomPhrase(' + customIdx + '); event.stopPropagation();">✕</button>' : '') +
+    '</div>';
+  }).join('');
+}
+
+var currentUtterance = null;
+function speak(card, text, lang) {
+  document.querySelectorAll('.phrase-card.speaking').forEach(function(c) { c.classList.remove('speaking'); });
+  card.classList.add('speaking');
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = lang;
+    u.rate = 0.85;
+    u.onend = function() {
+      card.classList.remove('speaking');
+      document.getElementById('nowSpeaking').classList.remove('show');
+    };
+    u.onstart = function() {
+      document.getElementById('speakingText').textContent = text;
+      document.getElementById('nowSpeaking').classList.add('show');
+    };
+    currentUtterance = u;
+    window.speechSynthesis.speak(u);
+  }
+}
+
+// ===== CUSTOM PHRASES =====
+function openModal() {
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+  document.getElementById('customEn').value = '';
+  document.getElementById('customTl').value = '';
+  document.getElementById('modalError').textContent = '';
+}
+function saveCustomPhrase() {
+  var en = document.getElementById('customEn').value.trim();
+  var tl = document.getElementById('customTl').value.trim();
+  var cat = document.getElementById('customCat').value;
+  if (!en || !tl) {
+    document.getElementById('modalError').textContent = 'Both fields are required.';
+    return;
+  }
+  CUSTOM_PHRASES.push({ en: en, tl: tl, cat: cat || 'Custom' });
+  saveCustomPhrasesToStorage(CUSTOM_PHRASES);
+  closeModal();
+  renderCategories();
+  renderPhrases();
+}
+function deleteCustomPhrase(idx) {
+  CUSTOM_PHRASES.splice(idx, 1);
+  saveCustomPhrasesToStorage(CUSTOM_PHRASES);
+  renderCategories();
+  renderPhrases();
+}
+
+// ===== LICENSE =====
+var DEMO_LIMIT = 10;
+var unlocked = false;
+
+function tryUnlock() {
+  var input = document.getElementById('lockInput').value.trim();
+  if (!input) return;
+  document.getElementById('lockError').style.display = 'none';
+  fetch('https://john-174a7c51.base44.app/functions/verifyPhrasebookLicense', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ license_key: input, phrasebook: 'french-social' })
+  }).then(function(res) { return res.json(); }).then(function(data) {
+    if (data.valid === true) {
+      localStorage.setItem('license_french_social', input);
+      unlocked = true;
+      document.getElementById('lockOverlay').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      init();
+    } else {
+      document.getElementById('lockError').style.display = 'block';
+    }
+  }).catch(function(e) {
+    document.getElementById('lockError').style.display = 'block';
+  });
+}
+
+function enterDemo() {
+  document.getElementById('lockOverlay').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  init();
+}
+
+// On load
+(function() {
+  var saved = localStorage.getItem('license_french_social');
+  if (saved) {
+    unlocked = true;
+    document.getElementById('lockOverlay').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    init();
+  } else {
+    document.getElementById('lockOverlay').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  }
+})();
+</script>
+</body>
+</html>
